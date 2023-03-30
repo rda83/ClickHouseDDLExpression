@@ -5,6 +5,7 @@ using ClickHouseDDLExpression.Features.CreateTable;
 using ClickHouseDDLExpression.Helpers;
 using ClickHouseDDLExpression.Models.Common.DataTypes;
 using ClickHouseDDLExpression.Models.Common.Engines;
+using ClickHouseDDLExpression.Models.Common.PartitioningKey;
 using ClickHouseDDLExpression.Models.ExpressionBuilderParameters;
 
 namespace ClickHouseDDLExpression
@@ -32,8 +33,11 @@ namespace ClickHouseDDLExpression
                 .SetIsNotExists(helper.IsNotExistsSign())
                 .SetTableEngine(engineMergeTreeBuilder.Build());
 
-           var properties = type.GetProperties();
+            var partitioningKeyValue = helper.GetPartitioningKeyValue();
+            if (partitioningKeyValue != null)
+                createTableCommandBuilder.SetPartitioningKey(partitioningKeyValue);
 
+           var properties = type.GetProperties();
            foreach (var property in properties)
            {
                var newColumn = new ColumnDescriptionBuilder();
@@ -131,6 +135,7 @@ namespace ClickHouseDDLExpression
         private Type _type;
         private ClickHouseTableAttribute? _clickHouseTableAttribute;
         private CreateExpressionParameters? _parameters;
+        private Func<string>? _partitioningKeyFunc;
 
         public CreateExprHelper(Type type, CreateExpressionParameters? parameters)
         {
@@ -148,6 +153,18 @@ namespace ClickHouseDDLExpression
             }
 
             _parameters = parameters;
+
+            if(_parameters?.PartitioningKey != null)
+            {
+                _partitioningKeyFunc = _parameters.PartitioningKey;
+            }
+            else
+            {
+                if (!String.IsNullOrEmpty(_clickHouseTableAttribute?.PartitioningKey))
+                {
+                    _partitioningKeyFunc = () => _clickHouseTableAttribute?.PartitioningKey;
+                }
+            }
         }
 
         public string GetDbName()
@@ -196,6 +213,18 @@ namespace ClickHouseDDLExpression
             }
 
             return result;
+        }
+
+        public PartitioningKeyValue? GetPartitioningKeyValue()
+        {
+            if (_partitioningKeyFunc != null)
+            {
+                return new PartitioningKeyValue(() => _partitioningKeyFunc());
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 

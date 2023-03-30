@@ -8,6 +8,6 @@ namespace ClickHouseDDLExpression.Attributes
         public string? DbName { get; set; }
         public string? TableName { get; set; }
         public bool IsNotExists { get; set; }
-
+        public string? PartitioningKey { get; set; }
     }
 }
