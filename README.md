@@ -30,7 +30,7 @@ public class Aircraft
 ##### Логика генерации CREATE TABLE выражения:
 ```csharp
 var builder = new CreateTableBuilder();           
-var e = builder.Build<Aircraft>(
+string expressionText = builder.Build<Aircraft>(
     new CreateExpressionParameters()
     {
         DataBaseName = "AirDb",
