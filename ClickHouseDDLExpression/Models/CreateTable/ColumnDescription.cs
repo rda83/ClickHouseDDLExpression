@@ -29,20 +29,25 @@ namespace ClickHouseDDLExpression.Models.CreateTable
         public string GetView()
         {
             var sb = new StringBuilder();
-            sb.Append($"{this.ColumnName} ");
-            sb.Append($"{this.DataType.GetView()} ");
+            sb.Append($"{this.ColumnName}");
+            sb.Append($" {this.DataType.GetView()}");
 
             if (this.ColumnDefaultValue != null)
             {
-                sb.Append($"{this.ColumnDefaultValue.GetView()} ");
+                sb.Append($" {this.ColumnDefaultValue.GetView()}");
             }
 
-            sb.Append($"{GetNullNotNullFlag(this.IsNotNull)} ");
-            sb.Append($"{GetCodecInfo(this.Codecs)} ");
+            sb.Append($" {GetNullNotNullFlag(this.IsNotNull)}");
+
+            var codecInfo = GetCodecInfo(this.Codecs);
+            if (!string.IsNullOrEmpty(codecInfo))
+            {
+                sb.Append($" {codecInfo}");
+            }
 
             if (this.ColumnTTL != null)
             {
-                sb.Append(this.ColumnTTL.GetView());
+                sb.Append($" {this.ColumnTTL.GetView()}");
             }
 
             var result = sb.ToString();
@@ -60,7 +65,7 @@ namespace ClickHouseDDLExpression.Models.CreateTable
             for (int idx = 0; idx <= maxIndex; idx++)
             {
                 var codec = codecs[idx];
-                var lineDivider = idx == maxIndex ? string.Empty : ",";
+                var lineDivider = idx == maxIndex ? string.Empty : ", ";
                 sb.Append($"{codec.GetView()}{lineDivider}");
             }
             sb.Append(")");

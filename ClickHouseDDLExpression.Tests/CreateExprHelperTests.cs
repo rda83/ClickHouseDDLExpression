@@ -12,6 +12,9 @@ namespace ClickHouseDDLExpression.Tests
     public class CreateExprHelperTests
     {
 
+        //GetDbName - возможные способы указания имени базы
+
+
         /// <summary>
         /// Ключ партиционирования не указан
         /// </summary>
