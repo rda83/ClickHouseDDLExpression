@@ -1,5 +1,14 @@
 # ClickHouseDDLExpression
-### Генерация DDL выражений для СУБД ClickHouse.
+Библиотека предназначена для генерации DDL выражений СУБД ClickHouse.
+
+На данный момент позволяет сгенерировать выражение CREATE TABLE следующими способами:
+ - использование fluent интерфейса;
+ - с помощью анализа свойств и атрибутов класса. 
+
+Текущая версия обладает следующими ограничениями:
+ - поддерживается только MergeTree движок;
+ - может генерировать только CREATE TABLE выражение;
+ - ...
 
 #### Пример использования #1 - анализ свойств и атрибутов класса:
 
@@ -50,3 +59,55 @@ ORDER BY Model
 PRIMARY KEY Model
 SETTINGS index_granularity = 8192
 ```
+#### Пример использования #2 - fluent интерфейс:
+##### Логика генерации CREATE TABLE выражения:
+```csharp
+var createTableCommandBuilder = new CreateTableCommandBuilder();
+var table = createTableCommandBuilder
+    .SetDbName("JournalDB")
+    .SetTableName("Events")
+    .SetIsNotExists(false)
+    .SetTableEngine(
+        new TableEngineMergeTreeBuilder()
+        .Build())
+    .SetPartitioningKey(
+        new PartitioningKeyValue(() => "toYYYYMM(TimeStamp)"))
+    .AddColumn(
+        new ColumnDescriptionBuilder()
+            .SetColumnName("EventId")
+            .SetDataType(new ClickHouseDataTypeInt64())
+            .AddFieldCodec(new ClickHouseCompressionCodecLZ4())
+            .SetIsNotNull(true)
+            .SetOrderBy(0)
+            .SetPrimaryKey(0)
+            .Build())
+    .AddColumn(
+        new ColumnDescriptionBuilder()
+            .SetColumnName("TimeStamp")
+            .SetDataType(new ClickHouseDataTypeDateTime())
+            .SetIsNotNull(true)
+            .Build())
+    .AddColumn(
+        new ColumnDescriptionBuilder()
+            .SetColumnName("TextMessage")
+            .SetDataType(new ClickHouseDataTypeString())
+            .AddFieldCodec(new ClickHouseCompressionCodecLZ4())
+            .Build())
+    .Build();
+var сreateTableHandler = new CreateTableHandler();            
+string commandText = сreateTableHandler.GetCommand(table);
+```
+##### Результирующее выражение:
+```sql
+CREATE TABLE JournalDB.Events
+(
+    EventId Int64 NOT NULL CODEC(LZ4),
+    TimeStamp DateTime NOT NULL,
+    TextMessage String NULL CODEC(LZ4)
+) ENGINE = MergeTree()
+ORDER BY EventId
+PRIMARY KEY EventId
+PARTITION BY toYYYYMM(TimeStamp)
+```
+
+
